@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net5.0-windows</TargetFramework>
+        <UseWPF>true</UseWPF>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <None Remove="pics\saveicon.png" />
+      <Resource Include="pics\saveicon.png" />
+      <None Remove="pics\saveasicon.png" />
+      <Resource Include="pics\saveasicon.png" />
+      <None Remove="pics\saveasicon_disabled.png" />
+      <None Remove="pics\saveicon_disabled.png" />
+      <Resource Include="pics\saveicon_disabled.png" />
+      <None Remove="pics\openicon.png" />
+      <Resource Include="pics\openicon.png" />
+    </ItemGroup>
+
+</Project>
