@@ -1,13 +1,10 @@
 ﻿using System;
+using System.ComponentModel;
+using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-
-// TODO: allow newlines at textbox (maybe rich textbox)
-// TODO: add new document button
-// TODO: add close current document button
-// TODO: shelve unsaved documents on app close
 
 namespace GUI
 {
@@ -18,17 +15,37 @@ namespace GUI
             InitializeComponent();
             _builder = new StringBuilder();
             MainTB.TextChanged += MainTBOnTextChanged;
+            NewDocBt.Click += NewDocBtOnClick;
             OpenBt.Click += OpenBtOnClick;
             SaveBt.Click += SaveBtOnClick;
             SaveAsBt.Click += SaveAsBtOnClick;
             KeyDown += OnKeyDown;
-            IsSaved = true;
-            UpdateTitle();
+            Closing += OnClosing;
+
+            _shelfer = new Shelfer(ProgramName);
+            if (_shelfer.IsEmpty())
+            {
+                Reset();
+            }
+            else
+            {
+                var (filePath, content) = _shelfer.Take();
+                if (!string.IsNullOrWhiteSpace(filePath)) 
+                    IO.Open(filePath);
+
+                MainTB.Text = content;
+                IsSaved = false;
+            }
         }
 
+        private const string ProgramName = "Notepad--";
+ 
         private readonly StringBuilder _builder;
 
         private bool _isSaved;
+
+        private readonly Shelfer _shelfer;
+        
         private bool IsSaved
         {
             get => _isSaved;
@@ -38,6 +55,68 @@ namespace GUI
                 SaveBt.Content = FindResource(SaveBt.IsEnabled ? "SaveIcon" : "SaveIconDisabled");
                 _isSaved = value;
                 UpdateTitle();
+            }
+        }
+
+        private void Reset()
+        {
+            MainTB.Clear();
+            _builder.Clear();
+            IO.Reset();
+            IsSaved = true;
+            UpdateTitle();
+        }
+
+        private void UpdateTitle()
+        {
+            Title = $"{ProgramName} : {IO.CurrentFileName} {(IsSaved ? string.Empty : "(not saved)")}";
+        }
+
+        private void Open()
+        {
+            if (!CloseAndCreateNew())
+                return;
+
+            if (IO.TryOpen(out var content))
+            {
+                MainTB.Text = content;
+                IsSaved = true;
+                UpdateTitle();
+            }
+        }
+
+        private void Save()
+        {
+            IO.Save(_builder.ToString());
+            IsSaved = true;
+        }
+
+        private bool CloseAndCreateNew()
+        {
+            if (IsSaved)
+            {
+                Reset();
+                return true;
+            }
+
+            var result = MessageBox.Show(
+                "Save current document before closing?",
+                "Save on close",
+                MessageBoxButton.YesNoCancel);
+
+            switch (result)
+            {
+                case MessageBoxResult.Cancel:
+                    return false;
+                case MessageBoxResult.Yes:
+                    Save();
+                    Reset();
+                    return true;
+                case MessageBoxResult.No:
+                    Reset();
+                    return true;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
@@ -61,82 +140,13 @@ namespace GUI
             }
         }
 
-        private void UpdateTitle()
-        {
-            Title = $"Notepad-- : {IO.CurrentFileName} {(IsSaved ? string.Empty : "(not saved)")}";
-        }
+        private void NewDocBtOnClick(object sender, RoutedEventArgs e) => CloseAndCreateNew();
 
-        private void Save()
-        {
-            IO.Save(_builder.ToString());
-            IsSaved = true;
-        }
+        private void OpenBtOnClick(object sender, RoutedEventArgs e) => Open();
 
-        private void Open()
-        {
-            if (!TryCloseCurrentDocument())
-                return;
+        private void SaveBtOnClick(object sender, RoutedEventArgs e) => Save();
 
-            if (IO.Open(out var content))
-            {
-                MainTB.Text = content;
-                IsSaved = true;
-                UpdateTitle();
-            }
-        }
-
-        private void OpenBtOnClick(object sender, RoutedEventArgs e)
-        {
-            Open();
-        }
-
-        private bool TryCloseCurrentDocument()
-        {
-            void CloseCurrentDocument()
-            {
-                MainTB.Clear();
-                _builder.Clear();
-
-                IsSaved = false;
-                IO.Reset();
-            }
-            
-            if (IsSaved)
-            {
-                CloseCurrentDocument();
-                return true;
-            }
-
-            var result = MessageBox.Show(
-                "Save current document before closing?",
-                "Save on close",
-                MessageBoxButton.YesNoCancel);
-
-            switch (result)
-            {
-                case MessageBoxResult.Cancel:
-                    return false;
-                case MessageBoxResult.Yes:
-                    Save();
-                    CloseCurrentDocument();
-                    return true;
-                case MessageBoxResult.No:
-                    CloseCurrentDocument();
-                    return true;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        private void SaveBtOnClick(object sender, RoutedEventArgs e)
-        {
-            Save();
-        }
-
-        private void SaveAsBtOnClick(object sender, RoutedEventArgs e)
-        {
-            IO.SaveAs(_builder.ToString());
-        }
+        private void SaveAsBtOnClick(object sender, RoutedEventArgs e) => IO.SaveAs(_builder.ToString());
 
         private void OnKeyDown(object sender, KeyEventArgs e)
         {
@@ -157,8 +167,26 @@ namespace GUI
                 {
                     Open();
                 }
+                else if (Keyboard.IsKeyDown(Key.N))
+                {
+                    CloseAndCreateNew();
+                }
 
                 e.Handled = true;
+            }
+        }
+
+        private void OnClosing(object sender, CancelEventArgs e)
+        {
+            // shelve
+            if (!_isSaved)
+            {
+                _shelfer.Put(IO.CurrentFilePath, _builder.ToString());
+            }
+            else
+            {
+                if (!_shelfer.IsEmpty())
+                    _ = _shelfer.Take(); // discard shelf
             }
         }
     }

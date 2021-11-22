@@ -16,6 +16,8 @@
       <Resource Include="pics\saveicon_disabled.png" />
       <None Remove="pics\openicon.png" />
       <Resource Include="pics\openicon.png" />
+      <None Remove="pics\newicon.png" />
+      <Resource Include="pics\newicon.png" />
     </ItemGroup>
 
 </Project>

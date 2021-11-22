@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Security.Cryptography.Pkcs;
+using System.Windows;
 using Microsoft.Win32;
 
 namespace GUI
@@ -9,10 +11,23 @@ namespace GUI
         private const string Filter = "Text files | *.txt";
         private static string _currentPath;
 
+        public static string CurrentFilePath => _currentPath;
         public static string CurrentFileName => _currentPath is not null ? Path.GetFileName(_currentPath) : "empty document";
 
         public static void Reset() => _currentPath = null;
-        public static bool Open(out string contents)
+
+        public static string Open(string filepath)
+        {
+            _ = new FileInfo(filepath); // throws if path is invalid
+
+            if (Path.GetExtension(filepath) != ".txt")
+                throw new ArgumentException("Is not txt file");
+
+            _currentPath = filepath;
+            return File.ReadAllText(filepath);
+        }
+        
+        public static bool TryOpen(out string contents)
         {
             var ofd = new OpenFileDialog()
             {

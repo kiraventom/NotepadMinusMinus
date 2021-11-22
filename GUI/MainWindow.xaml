@@ -8,6 +8,7 @@
         Title="Notepad--" Height="450" Width="800"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
+        <Image x:Key="NewDocIcon" Source="pics/newicon.png"/>
         <Image x:Key="OpenIcon" Source="pics/openicon.png"/>
         <Image x:Key="SaveIcon" Source="pics/saveicon.png"/>
         <Image x:Key="SaveIconDisabled" Source="pics/saveicon_disabled.png"/>
@@ -24,6 +25,9 @@
 
         <StackPanel Orientation="Horizontal">
             <Button 
+                Name="NewDocBt" 
+                Content="{StaticResource NewDocIcon}"/>
+            <Button 
                 Name="OpenBt" 
                 Content="{StaticResource OpenIcon}"/>
             <Button 
@@ -36,6 +40,8 @@
         <TextBox
             Name="MainTB"
             Grid.Row="1"
+            AcceptsReturn="True"
+            AcceptsTab="True"
             VerticalScrollBarVisibility="Visible">
             
         </TextBox>
