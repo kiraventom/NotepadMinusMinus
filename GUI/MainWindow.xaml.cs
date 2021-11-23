@@ -8,6 +8,8 @@ using System.Windows.Input;
 
 namespace GUI
 {
+	// TODO: Add opening by argument
+
     public partial class MainWindow : Window
     {
         public MainWindow()
@@ -22,14 +24,14 @@ namespace GUI
             KeyDown += OnKeyDown;
             Closing += OnClosing;
 
-            _shelfer = new Shelfer(ProgramName);
-            if (_shelfer.IsEmpty())
+            _shelf = new Shelf(ProgramName);
+            if (_shelf.IsEmpty())
             {
                 Reset();
             }
             else
             {
-                var (filePath, content) = _shelfer.Take();
+                var (filePath, content) = _shelf.Take();
                 if (!string.IsNullOrWhiteSpace(filePath)) 
                     IO.Open(filePath);
 
@@ -44,7 +46,7 @@ namespace GUI
 
         private bool _isSaved;
 
-        private readonly Shelfer _shelfer;
+        private readonly Shelf _shelf;
         
         private bool IsSaved
         {
@@ -155,13 +157,9 @@ namespace GUI
                 if (Keyboard.IsKeyDown(Key.S))
                 {
                     if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
-                    {
                         IO.SaveAs(_builder.ToString());
-                    }
                     else
-                    {
                         Save();
-                    }
                 }
                 else if (Keyboard.IsKeyDown(Key.O))
                 {
@@ -181,12 +179,12 @@ namespace GUI
             // shelve
             if (!_isSaved)
             {
-                _shelfer.Put(IO.CurrentFilePath, _builder.ToString());
+                _shelf.Put(IO.CurrentFilePath, _builder.ToString());
             }
             else
             {
-                if (!_shelfer.IsEmpty())
-                    _ = _shelfer.Take(); // discard shelf
+                if (!_shelf.IsEmpty())
+                    _ = _shelf.Take(); // discard shelf
             }
         }
     }
